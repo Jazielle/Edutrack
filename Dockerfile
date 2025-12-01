@@ -11,7 +11,7 @@ FROM eclipse-temurin:17-jre-alpine
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 
-# Clave secreta fija para evitar errores
+# Clave secreta (simple para evitar errores)
 ENV JWT_SECRET CLAVEFINALSECRETAEDUCTRACKFINAL
 
 # Comando de inicio
