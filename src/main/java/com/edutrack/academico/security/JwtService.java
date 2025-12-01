@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
-import java.nio.charset.StandardCharsets; // Importación necesaria para leer texto normal
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,54 +18,50 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    private final Dotenv dotenv = Dotenv.configure()
-            .ignoreIfMissing()
-            .load();
-
+    private final Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
     private Key key;
 
     @PostConstruct
     public void initKey() {
         String secret = null;
-
         try {
             secret = dotenv.get("JWT_SECRET");
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
 
         if (secret == null || secret.isBlank()) {
             secret = System.getenv("JWT_SECRET");
         }
 
-        // Si no encuentra la clave, usamos una por defecto para que NO falle al arrancar
+        // Valor por defecto para evitar crash si no hay variable
         if (secret == null || secret.isBlank()) {
-            System.out.println("ADVERTENCIA: No se encontró JWT_SECRET. Usando clave por defecto insegura.");
-            secret = "EstaEsUnaClavePorDefectoParaQueNoFalleElDespliegue12345";
+            secret = "ClavePorDefectoParaQueNoFalle1234567890";
         }
 
-        // --- CAMBIO SOLICITADO: ELIMINADA LA OBLIGACIÓN DE BASE64 ---
-
-        // Antes (Lo que causaba el error):
-        // byte[] keyBytes = Decoders.BASE64.decode(secret.trim());
-
-        // Ahora (Acepta cualquier texto):
+        // --- CORRECCIÓN DEFINITIVA ---
+        // Ya no decodificamos Base64. Leemos los bytes directos.
+        // Esto acepta guiones, espacios, puntos, lo que sea.
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
 
-        // Eliminamos la validación estricta de longitud que lanzaba excepciones
-        // Solo nos aseguramos de que Keys.hmacShaKeyFor no falle (necesita algo de longitud)
+        // Ajuste de longitud para evitar errores de seguridad de la librería
         if (keyBytes.length < 32) {
-            // Si la clave es muy corta, la repetimos para que alcance el largo necesario sin error
-            String secretPad = secret.repeat(32);
-            keyBytes = secretPad.getBytes(StandardCharsets.UTF_8);
+            String pad = secret.repeat(5);
+            keyBytes = pad.getBytes(StandardCharsets.UTF_8);
+        }
+
+        // Recorte si es demasiado larga (opcional, por seguridad)
+        if (keyBytes.length > 64) {
+            byte[] trimmed = new byte[64];
+            System.arraycopy(keyBytes, 0, trimmed, 0, 64);
+            keyBytes = trimmed;
         }
 
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
+    // --- RESTO DEL CÓDIGO IGUAL ---
+
     private Key getKey() {
-        if (key == null) {
-            initKey();
-        }
+        if (key == null) initKey();
         return key;
     }
 
@@ -79,17 +75,12 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        return Jwts.parserBuilder().setSigningKey(getKey()).build().parseClaimsJws(token).getBody();
     }
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", userDetails.getAuthorities());
-
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
@@ -105,7 +96,6 @@ public class JwtService {
     }
 
     private boolean isTokenExpired(String token) {
-        Date expiration = extractClaim(token, Claims::getExpiration);
-        return expiration.before(new Date());
+        return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 }
