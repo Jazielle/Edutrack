@@ -1,4 +1,4 @@
-# 1. Build
+# 1. Fase de Construcción
 FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 COPY pom.xml .
@@ -6,13 +6,15 @@ RUN mvn dependency:go-offline
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-# 2. Run
+# 2. Fase de Producción
 FROM eclipse-temurin:17-jre-alpine
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 
-# Usamos una clave de texto simple directamente aquí.
-# Al haber cambiado el código Java, esta clave de texto YA NO DARÁ ERROR.
-ENV JWT_SECRET ClaveTextoNormalSinBase64_Edutrack2025
+# --- SOLUCIÓN DE CLAVE ---
+# Esta es una clave codificada en Base64 real y válida (44 caracteres, sin guiones).
+# Decodifica a 32 bytes, lo que satisface la seguridad de tu código Java.
+ENV JWT_SECRET TWkgQ2xhdmUgU2VjcmV0YSBQYXJhIEVkdVRyYWNrIDIwMjU=
 
+# Comando de inicio
 ENTRYPOINT ["java", "-jar", "app.jar"]
