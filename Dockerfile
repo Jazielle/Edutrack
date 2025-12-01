@@ -27,5 +27,7 @@ COPY --from=build /app/target/*.jar app.jar
 # Expone el puerto por defecto de Spring Boot (Render lo ajustará)
 EXPOSE 8080
 
-# Comando para ejecutar la aplicación JAR
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# ... (otras líneas del Dockerfile)
+
+# Comando para ejecutar la aplicación JAR, inyectando las Variables de Entorno aquí
+ENTRYPOINT ["java", "-Djwt.secret=ClaveUltraFuerte-Render-P4rDi4FK-2025$SeguridadTotal!", "-jar", "app.jar"]
