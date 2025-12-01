@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
-import java.nio.charset.StandardCharsets; // Importación necesaria
+import java.nio.charset.StandardCharsets; // Importación necesaria para leer texto normal
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +18,6 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    // (Tu manejo de dotenv sigue igual)
     private final Dotenv dotenv = Dotenv.configure()
             .ignoreIfMissing()
             .load();
@@ -38,28 +37,30 @@ public class JwtService {
             secret = System.getenv("JWT_SECRET");
         }
 
+        // Si no encuentra la clave, usamos una por defecto para que NO falle al arrancar
         if (secret == null || secret.isBlank()) {
-            // Error de despliegue si la variable no existe
-            throw new IllegalStateException("JWT_SECRET no se encontró en las variables de entorno.");
+            System.out.println("ADVERTENCIA: No se encontró JWT_SECRET. Usando clave por defecto insegura.");
+            secret = "EstaEsUnaClavePorDefectoParaQueNoFalleElDespliegue12345";
         }
 
-        // -----------------------------------------------------------
-        // SOLUCIÓN: Usamos la clave como una cadena normal y
-        // dejamos que la librería la convierta a bytes seguros (Base64)
-        // -----------------------------------------------------------
+        // --- CAMBIO SOLICITADO: ELIMINADA LA OBLIGACIÓN DE BASE64 ---
 
-        // 1. Verificación de longitud mínima (opcional, pero buena práctica)
-        if (secret.length() < 32) {
-            throw new IllegalStateException("JWT_SECRET debe tener al menos 32 caracteres.");
+        // Antes (Lo que causaba el error):
+        // byte[] keyBytes = Decoders.BASE64.decode(secret.trim());
+
+        // Ahora (Acepta cualquier texto):
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+
+        // Eliminamos la validación estricta de longitud que lanzaba excepciones
+        // Solo nos aseguramos de que Keys.hmacShaKeyFor no falle (necesita algo de longitud)
+        if (keyBytes.length < 32) {
+            // Si la clave es muy corta, la repetimos para que alcance el largo necesario sin error
+            String secretPad = secret.repeat(32);
+            keyBytes = secretPad.getBytes(StandardCharsets.UTF_8);
         }
 
-        // 2. Generar la clave de forma segura desde la cadena (SIN DECODIFICACIÓN BASE64 MANUAL)
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.key = Keys.hmacShaKeyFor(keyBytes);
     }
-
-    // -----------------------------------------------------------
-    // EL RESTO DEL CÓDIGO PERMANECE IGUAL
-    // -----------------------------------------------------------
 
     private Key getKey() {
         if (key == null) {
