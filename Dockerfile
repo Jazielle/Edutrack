@@ -26,7 +26,8 @@ COPY --from=build /app/target/*.jar app.jar
 
 # Expone el puerto por defecto de Spring Boot (Render lo ajustará)
 EXPOSE 8080
+# Agrega esta línea en la sección de producción de tu Dockerfile
+ENV JWT_SECRET ClaveUltraFuerte-Render-P4rDi4FK-2025$SeguridadTotal!
 
-# ... (otras líneas del Dockerfile)
-# Reemplaza la línea ENTRYPOINT
-ENTRYPOINT ["java", "-Djwt.secret=ClaveUltraFuerte-Render-P4rDi4FK-2025$SeguridadTotal!", "-jar", "app.jar"]
+# Luego, la línea ENTRYPOINT debería ser:
+ENTRYPOINT ["java", "-jar", "app.jar"]
