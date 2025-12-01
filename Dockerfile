@@ -15,7 +15,6 @@ COPY --from=build /app/target/*.jar app.jar
 # Expone el puerto por defecto de Spring Boot
 EXPOSE 8080
 
-# Comando FINAL de INICIO:
-# Inyección de la clave secreta directamente como propiedad del sistema (-D)
-# *Esta es la sintaxis más robusta de Shell para forzar la variable*
+# Comando de inicio: Inyecta la clave secreta directamente como propiedad del sistema (-D).
+# Esto es más robusto contra los errores de Base64 de la librería JWT.
 ENTRYPOINT ["java", "-Djwt.secret=CLAVEFINALSECRETAEDUCTRACKFINAL", "-jar", "app.jar"]
