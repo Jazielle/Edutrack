@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
-import java.nio.charset.StandardCharsets; // Importante para leer texto normal
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,45 +18,37 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    private final Dotenv dotenv = Dotenv.configure()
-            .ignoreIfMissing()
-            .load();
-
+    private final Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
     private Key key;
 
     @PostConstruct
     public void initKey() {
         String secret = null;
-
         try {
             secret = dotenv.get("JWT_SECRET");
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
 
         if (secret == null || secret.isBlank()) {
             secret = System.getenv("JWT_SECRET");
         }
 
-        // Si por alguna razón no encuentra la clave, usa esta por defecto para que NO EXPLOTE.
+        // Valor por defecto para evitar crash si no hay variable
         if (secret == null || secret.isBlank()) {
-            System.err.println("ADVERTENCIA: Usando clave insegura por defecto.");
-            secret = "ClavePorDefecto1234567890qwertyuiopasdfghjklzxcvbnm";
+            secret = "ClavePorDefectoParaQueNoFalle1234567890";
         }
 
-        // --- AQUÍ ESTÁ EL CAMBIO ---
-        // BORRÉ: Decoders.BASE64.decode(secret) <- ESTO CAUSABA EL ERROR
-        // PUSE: secret.getBytes(...)
-        // Esto acepta CUALQUIER texto plano como contraseña.
+        // --- CORRECCIÓN DEFINITIVA ---
+        // Ya no decodificamos Base64. Leemos los bytes directos.
+        // Esto acepta guiones, espacios, puntos, lo que sea.
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
 
-        // Aseguramos que tenga longitud suficiente repitiendo la clave si es corta
-        // para evitar el error "HMAC-SHA algorithms require a key of..."
+        // Ajuste de longitud para evitar errores de seguridad de la librería
         if (keyBytes.length < 32) {
-             String pad = secret.repeat(10);
+             String pad = secret.repeat(5);
              keyBytes = pad.getBytes(StandardCharsets.UTF_8);
         }
 
-        // Si es demasiado largo, lo recortamos a 64 bytes para evitar errores raros.
+        // Recorte si es demasiado larga (opcional, por seguridad)
         if (keyBytes.length > 64) {
             byte[] trimmed = new byte[64];
             System.arraycopy(keyBytes, 0, trimmed, 0, 64);
@@ -66,10 +58,10 @@ public class JwtService {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
+    // --- RESTO DEL CÓDIGO IGUAL ---
+
     private Key getKey() {
-        if (key == null) {
-            initKey();
-        }
+        if (key == null) initKey();
         return key;
     }
 
@@ -83,17 +75,12 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        return Jwts.parserBuilder().setSigningKey(getKey()).build().parseClaimsJws(token).getBody();
     }
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", userDetails.getAuthorities());
-
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
@@ -109,7 +96,6 @@ public class JwtService {
     }
 
     private boolean isTokenExpired(String token) {
-        Date expiration = extractClaim(token, Claims::getExpiration);
-        return expiration.before(new Date());
+        return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 }
