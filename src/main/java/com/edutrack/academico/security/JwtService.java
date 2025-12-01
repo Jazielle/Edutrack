@@ -3,13 +3,13 @@ package com.edutrack.academico.security;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
+import java.nio.charset.StandardCharsets; // Importación necesaria
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +18,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
+    // (Tu manejo de dotenv sigue igual)
     private final Dotenv dotenv = Dotenv.configure()
             .ignoreIfMissing()
             .load();
@@ -38,16 +39,27 @@ public class JwtService {
         }
 
         if (secret == null || secret.isBlank()) {
-            throw new IllegalStateException("No se encontró JWT_SECRET.");
+            // Error de despliegue si la variable no existe
+            throw new IllegalStateException("JWT_SECRET no se encontró en las variables de entorno.");
         }
 
-        byte[] keyBytes = Decoders.BASE64.decode(secret.trim());
-        if (keyBytes.length < 32) {
-            throw new IllegalStateException("JWT_SECRET debe ser al menos 256 bits (32 bytes).");
+        // -----------------------------------------------------------
+        // SOLUCIÓN: Usamos la clave como una cadena normal y
+        // dejamos que la librería la convierta a bytes seguros (Base64)
+        // -----------------------------------------------------------
+
+        // 1. Verificación de longitud mínima (opcional, pero buena práctica)
+        if (secret.length() < 32) {
+            throw new IllegalStateException("JWT_SECRET debe tener al menos 32 caracteres.");
         }
 
-        this.key = Keys.hmacShaKeyFor(keyBytes);
+        // 2. Generar la clave de forma segura desde la cadena (SIN DECODIFICACIÓN BASE64 MANUAL)
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
+
+    // -----------------------------------------------------------
+    // EL RESTO DEL CÓDIGO PERMANECE IGUAL
+    // -----------------------------------------------------------
 
     private Key getKey() {
         if (key == null) {
@@ -96,4 +108,3 @@ public class JwtService {
         return expiration.before(new Date());
     }
 }
-
