@@ -15,9 +15,7 @@ COPY --from=build /app/target/*.jar app.jar
 # Expone el puerto por defecto de Spring Boot
 EXPOSE 8080
 
-# Establece la variable de entorno JWT_SECRET (Solo el valor, sin comillas)
-ENV JWT_SECRET CLAVEFINALSECRETAEDUCTRACKFINAL
-
-# Comando para ejecutar la aplicación JAR e inyectar la URL de la DB
-# *Nota: La clave JWT_SECRET debe ser leída por Spring Boot desde ENV.*
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Comando FINAL de INICIO:
+# Inyecta la clave secreta directamente como propiedad del sistema Java.
+# Esto es a prueba de errores del shell y resuelve el problema de los espacios (' ').
+ENTRYPOINT ["java", "-Djwt.secret=CLAVEFINALSECRETAEDUCTRACKFINAL", "-jar", "app.jar"]
