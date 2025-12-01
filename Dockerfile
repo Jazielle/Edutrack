@@ -16,6 +16,6 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 
 # Comando FINAL de INICIO:
-# Inyecta la clave secreta directamente como propiedad del sistema Java.
-# Esto es a prueba de errores del shell y resuelve el problema de los espacios (' ').
+# Inyección de la clave secreta directamente como propiedad del sistema (-D)
+# *Esta es la sintaxis más robusta de Shell para forzar la variable*
 ENTRYPOINT ["java", "-Djwt.secret=CLAVEFINALSECRETAEDUCTRACKFINAL", "-jar", "app.jar"]
