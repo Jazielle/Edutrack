@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: edutrack
+    env: java # <--- ESTO FUERZA EL ENTORNO JAVA
+    plan: free
+    repo: https://github.com/Jazielle/Edutrack
+    branch: main
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        # Render leerá esta variable desde tu configuración secreta
+      - key: SPRING_DATASOURCE_USERNAME
+      - key: SPRING_DATASOURCE_PASSWORD
+      - key: JAVA_VERSION
+        value: "17" # Doble verificación
