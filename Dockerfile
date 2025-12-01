@@ -28,6 +28,5 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 
 # ... (otras líneas del Dockerfile)
-
-# Comando para ejecutar la aplicación JAR, inyectando las Variables de Entorno aquí
+# Reemplaza la línea ENTRYPOINT
 ENTRYPOINT ["java", "-Djwt.secret=ClaveUltraFuerte-Render-P4rDi4FK-2025$SeguridadTotal!", "-jar", "app.jar"]
