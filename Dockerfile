@@ -27,8 +27,8 @@ COPY --from=build /app/target/*.jar app.jar
 # Expone el puerto por defecto de Spring Boot
 EXPOSE 8080
 
-# Inyección de la variable secreta para el RUNTIME (Sin caracteres especiales)
-ENV JWT_SECRET CLAVEFINALSECRETAEDUCTRACKFINAL
+# Usa comillas dobles para asegurar que el valor sea UNA SOLA CADENA
+ENV JWT_SECRET "CLAVEFINALSECRETAEDUCTRACKFINAL"
 
-# Comando para ejecutar la aplicación JAR
+# La línea ENTRYPOINT sigue igual:
 ENTRYPOINT ["java", "-jar", "app.jar"]
