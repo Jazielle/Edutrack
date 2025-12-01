@@ -11,10 +11,10 @@ COPY pom.xml .
 # Descarga las dependencias (optimiza el caché)
 RUN mvn dependency:go-offline
 
-# Copia el código fuente
+# Copia el código fuente (src/ main/ java/ resources)
 COPY src ./src
 
-# Compila y empaqueta el código en un JAR (el mismo comando que usamos)
+# Compila y empaqueta el código en un JAR
 RUN mvn clean package -DskipTests
 
 # 2. Fase de Producción (Run Stage)
@@ -24,10 +24,11 @@ FROM eclipse-temurin:17-jre-alpine
 # Copia el archivo JAR generado en la fase de construcción a la carpeta de producción
 COPY --from=build /app/target/*.jar app.jar
 
-# Expone el puerto por defecto de Spring Boot (Render lo ajustará)
+# Expone el puerto por defecto de Spring Boot
 EXPOSE 8080
-# Agrega esta línea en la sección de producción de tu Dockerfile
-ENV JWT_SECRET ClaveUltraFuerte-Render-P4rDi4FK-2025$SeguridadTotal!
 
-# Luego, la línea ENTRYPOINT debería ser:
+# Inyección de la variable secreta para el RUNTIME (Sin caracteres especiales)
+ENV JWT_SECRET CLAVEFINALSECRETAEDUCTRACK2025
+
+# Comando para ejecutar la aplicación JAR
 ENTRYPOINT ["java", "-jar", "app.jar"]
