@@ -28,7 +28,7 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 
 # Inyección de la variable secreta para el RUNTIME (Sin caracteres especiales)
-ENV JWT_SECRET CLAVEFINALSECRETAEDUCTRACK2025
+ENV JWT_SECRET CLAVEFINALSECRETAEDUCTRACKFINAL
 
 # Comando para ejecutar la aplicación JAR
 ENTRYPOINT ["java", "-jar", "app.jar"]
