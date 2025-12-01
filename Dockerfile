@@ -1,34 +1,23 @@
 # 1. Fase de Construcción (Build Stage)
-# Usa una imagen base que ya tiene Java y Maven preinstalados
 FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
-
-# Establece el directorio de trabajo dentro del contenedor
 WORKDIR /app
-
-# Copia los archivos de configuración de Maven para descargar dependencias
 COPY pom.xml .
-
-# Descarga las dependencias (optimiza el caché)
 RUN mvn dependency:go-offline
-
-# Copia el código fuente (src/ main/ java/ resources)
 COPY src ./src
-
-# Compila y empaqueta el código en un JAR
 RUN mvn clean package -DskipTests
 
 # 2. Fase de Producción (Run Stage)
-# Usa una imagen base más ligera (solo Java JRE) para el runtime
 FROM eclipse-temurin:17-jre-alpine
 
-# Copia el archivo JAR generado en la fase de construcción a la carpeta de producción
+# Copia el archivo JAR generado
 COPY --from=build /app/target/*.jar app.jar
 
 # Expone el puerto por defecto de Spring Boot
 EXPOSE 8080
 
-# Usa comillas dobles para asegurar que el valor sea UNA SOLA CADENA
-ENV JWT_SECRET "CLAVEFINALSECRETAEDUCTRACKFINAL"
+# Establece la variable de entorno JWT_SECRET (Solo el valor, sin comillas)
+ENV JWT_SECRET CLAVEFINALSECRETAEDUCTRACKFINAL
 
-# La línea ENTRYPOINT sigue igual:
+# Comando para ejecutar la aplicación JAR e inyectar la URL de la DB
+# *Nota: La clave JWT_SECRET debe ser leída por Spring Boot desde ENV.*
 ENTRYPOINT ["java", "-jar", "app.jar"]
