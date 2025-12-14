@@ -14,18 +14,27 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:3000",
-                "http://localhost:5173",
-                "http://127.0.0.1:5173"
-        ));
+
+        // Permitir TODOS los orígenes (necesario para Flutter Web en Chrome/Edge)
+        config.setAllowedOriginPatterns(List.of("*"));
+
+        // Métodos HTTP permitidos
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
-        config.setAllowCredentials(true);
+
+        // Headers permitidos
+        config.setAllowedHeaders(List.of("*"));
+
+        // Headers expuestos (para que el cliente pueda leerlos)
+        config.setExposedHeaders(List.of("Authorization"));
+
+        // Deshabilitar credentials cuando se usa "*" en origins
+        config.setAllowCredentials(false);
+
+        // Tiempo de caché para preflight requests
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
 }
-
